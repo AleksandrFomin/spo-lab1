@@ -40,22 +40,51 @@ void print_error(int error)
 	exit(error);
 }
 
+void write_counts (uintmax_t lines, uintmax_t bytes, const char *file)
+{
+	if (print_bytes) {
+		char tmp[64] = {0x0};
+		sprintf(tmp, "%lu", bytes);
+		write(STDOUT_FILENO, tmp, sizeof(tmp));
+		write(STDOUT_FILENO, " ", 1);
+	}
+
+	if (print_lines) {
+		char tmp[64] = {0x0};
+		sprintf(tmp, "%lu", bytes);
+		write(STDOUT_FILENO, tmp, sizeof(tmp));
+		write(STDOUT_FILENO, " ", 1);
+	}
+
+	if (file) {
+		write(STDOUT_FILENO, file, sizeof(file));
+	}
+	write(STDOUT_FILENO, "\n", 1);
+}
+
 int wc(int fd, char const *file_name)
 {
 	char buf[BUFFER_SIZE + 1];
 	size_t bytes_read;
-	uintmax_t lines, words, chars, bytes, linelength;
+	uintmax_t lines, words, bytes;
 	// printf("file: %s\n", file_name);
+	lines = words = bytes = 0;
 	while ((bytes_read = read(fd, buf, BUFFER_SIZE)) > 0)
 	{
-		// if (bytes_read == SAFE_READ_ERROR)
-		// {
-		// 	print_error(errno);
-		// }
+		char *p = buf;
+		while ((p = memchr (p, '\n', (buf + bytes_read) - p)))
+		{
+			++p;
+			++lines;
+		}
 		bytes += bytes_read;
-		printf("bytes %lu\n", bytes);
 	}
-	printf("file: %s bytes: %lu", file_name, bytes);
+	write_counts (lines, bytes, file_name);
+  	total_lines += lines;
+  	total_bytes += bytes;
+
+  	return 0;
+	// printf("file: %s bytes: %lu lines: %lu words: %lu \n", file_name, bytes, lines, words);
 }
 
 int wc_file(char const *file)
